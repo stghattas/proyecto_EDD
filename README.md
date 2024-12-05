@@ -1,4 +1,6 @@
 Proyecto de Estructura Dinamica de Datos - URU
+Integrantes:
+- Samer Ghattas, C.I: 31.887.714
 
 🔮👑Proyecto de Árbol Genealógico de Reyes
 
