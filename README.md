@@ -1,9 +1,11 @@
 Proyecto de Estructura Dinamica de Datos - URU
+
 🔮👑Proyecto de Árbol Genealógico de Reyes
 
 Este proyecto simula un sistema para gestionar un árbol genealógico de reyes, donde se controla el rol de rey en función de ciertas reglas (edad, muerte, sucesión). El programa permite modificar la información de los individuos dentro del árbol, actualizar su estado de "rey" y "muerto", y asignar un nuevo rey siguiendo una serie de criterios.
 
-📝 Descripción del Proyecto
+📝 Descripción del Proyecto:
+
 El código se organiza en una estructura de árbol binario donde cada nodo representa un individuo. Cada nodo tiene información acerca del individuo, como su nombre, apellido, edad, si está muerto o vivo, y si ha sido rey o es actualmente rey.
 
 🏗️ Funciones principales del programa:
