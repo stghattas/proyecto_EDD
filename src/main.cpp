@@ -3,8 +3,19 @@
 #include <sstream>
 #include <string>
 #include <cstdlib>
+#include <iomanip>
 
 using namespace std;
+
+// Códigos de color ANSI
+#define RESET "\033[0m"
+#define BOLD "\033[1m"
+#define RED "\e[0;31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define CYAN "\033[36m"
+#define RED_HC "\e[0;91m"
 
 // Nodo del arbol binario
 struct TreeNode
@@ -85,11 +96,14 @@ TreeNode *findFirstAliveSibling(TreeNode *root)
     return findFirstAlivePrimogenito(sibling);
 }
 
-TreeNode* findAncestorWithTwoChildren(TreeNode* root) {
-    if (!root) return nullptr;
+TreeNode *findAncestorWithTwoChildren(TreeNode *root)
+{
+    if (!root)
+        return nullptr;
 
     // Si el ancestro tiene dos hijos vivos, devuelve el ancestro
-    if (root->left && root->right && !root->left->is_dead && !root->right->is_dead) {
+    if (root->left && root->right && !root->left->is_dead && !root->right->is_dead)
+    {
         return root;
     }
 
@@ -97,13 +111,25 @@ TreeNode* findAncestorWithTwoChildren(TreeNode* root) {
     return findAncestorWithTwoChildren(root->parent);
 }
 
-
 // Imprimir el arbol
 void printTree(TreeNode *root)
 {
     if (!root)
         return;
-    cout << "ID: " << root->id << ", Nombre: " << root->name << ", Apellido: " << root->last_name << ", Genero: " << root->gender << ", Edad: " << root->age << ", ID Padre: " << root->id_father << ", Esta muerto: " << root->is_dead << ", Fue rey: " << root->was_king << ", Es rey: " << root->is_king << endl;
+
+    // Imprimir cada campo en una linea separada
+    cout << CYAN << BOLD << "ID: " << RESET << root->id << endl;
+    cout << BOLD << "Nombre: " << RESET << root->name << endl;
+    cout << BOLD << "Apellido: " << RESET << root->last_name << endl;
+    cout << CYAN << BOLD << "Genero: " << RESET << (root->gender == 'M' ? "M" : "F") << endl;
+    cout << CYAN << BOLD << "Edad: " << RESET << root->age << endl;
+    cout << BOLD << RED << "ID Padre: " << RESET << root->id_father << endl;
+    cout << BOLD << "Esta muerto: " << RESET << (root->is_dead ? GREEN "Sí" : RED_HC "No") << RESET << endl;
+    cout << BOLD << "Fue Rey: " << RESET << (root->was_king ? GREEN "Si" : RED_HC "No") << RESET << endl;
+    cout << BOLD << "Es Rey: " << RESET << (root->is_king ? GREEN "Si" : RED_HC "No") << RESET << endl;
+    cout << endl;
+
+    // Recursion sobre los hijos
     printTree(root->left);
     printTree(root->right);
 }
@@ -152,7 +178,6 @@ void verifyKing(TreeNode *root)
     verifyKing(root->left);
     verifyKing(root->right);
 }
-
 
 TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
 {
@@ -501,7 +526,6 @@ void modifyNode(TreeNode *root)
     }
 }
 
-
 // Mostrar la linea de sucesion con los detalles completos de cada miembro
 void showLineOfSuccession(TreeNode *root)
 {
@@ -511,16 +535,17 @@ void showLineOfSuccession(TreeNode *root)
     // Mostrar solo a los miembros vivos
     if (!root->is_dead)
     {
-        // Mostrar detalles completos del nodo
-        cout << "ID: " << root->id
-             << ", Name: " << root->name
-             << ", Last Name: " << root->last_name
-             << ", Gender: " << (root->gender == 'M' ? "M" : "F")
-             << ", Age: " << root->age
-             << ", ID Father: " << root->id_father
-             << ", Is Dead: " << (root->is_dead ? "Yes" : "No")
-             << ", Was King: " << (root->was_king ? "Yes" : "No")
-             << ", Is King: " << (root->is_king ? "Yes" : "No") << endl;
+        // Imprimir cada campo en su propia línea
+        cout << CYAN << BOLD << "ID: " << RESET << root->id << endl;
+        cout << BOLD << "Nombre: " << RESET << root->name << endl;
+        cout << BOLD << "Apellido: " << RESET << root->last_name << endl;
+        cout << CYAN << BOLD << "Genero: " << RESET << (root->gender == 'M' ? "M" : "F") << endl;
+        cout << CYAN << BOLD << "Edad: " << RESET << root->age << endl;
+        cout  <<BOLD << RED << "ID Padre: " << RESET << root->id_father << endl;
+        cout << BOLD << "Esta muerto: " << RESET << (root->is_dead ? GREEN "Si" : RED_HC "No") << RESET << endl;
+        cout << BOLD << "Fue Rey: " << RESET << (root->was_king ? GREEN "Si" : RED_HC "No") << RESET << endl;
+        cout << BOLD << "Es Rey: " << RESET << (root->is_king ? GREEN "Si" : RED_HC "No") << RESET << endl;
+        cout << endl; // Añadir una línea vacía para separar cada nodo
     }
 
     // Recorrer al primogenito
