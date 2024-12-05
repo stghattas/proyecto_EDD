@@ -1,5 +1,5 @@
 id,name,last_name,gender,age,id_father,is_dead,was_king,is_king
-1,Royce,Sillitoe,M,99,30,false,true,true
+1,Royce,Sillitoe,M,99,1,false,true,true
 2,Kimmi,Benda,M,37,9,true,false,false
 3,Rosa,Tonkin,F,87,32,false,true,false
 4,Maisie,Gallaher,F,59,41,true,false,true

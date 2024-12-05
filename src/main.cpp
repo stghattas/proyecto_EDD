@@ -25,18 +25,20 @@ struct TreeNode
         : id(id), name(name), last_name(last_name), gender(gender), age(age), id_father(id_father), is_dead(is_dead), was_king(was_king), is_king(is_king), left(nullptr), right(nullptr) {}
 };
 
-TreeNode* findNode(TreeNode* root, int id);
+// Buscar nodo por ID
+TreeNode *findNode(TreeNode *root, int id);
 
+// Imprimir el árbol
 void printTree(TreeNode *root)
 {
     if (!root)
         return;
-    cout << "ID: " << root->id << ", Name: " << root->name << ", Age: " << root->age << ", Is King: " << root->is_king << endl;
+    cout << "ID: " << root->id << ", Nombre: " << root->name << ", Apellido: " << root->last_name << ", Genero: " << root->gender << ", Edad: " << root->age << ", ID Padre: " << root->id_father << ", Esta muerto: " << root->is_dead << ", Fue rey: " << root->was_king << ", Es rey: " << root->is_king << endl;
     printTree(root->left);
     printTree(root->right);
 }
 
-// Funcion para insertar un nodo en el arbol binario
+// Insertar un nodo en el árbol binario
 TreeNode *insertNode(TreeNode *root, TreeNode *newNode)
 {
     if (!root)
@@ -52,13 +54,95 @@ TreeNode *insertNode(TreeNode *root, TreeNode *newNode)
     }
     else
     {
-        // Evitar duplicados, pero esto no debería ocurrir si los IDs son unicos
         cerr << "Advertencia: Nodo duplicado con ID " << newNode->id << ".\n";
     }
     return root;
 }
 
-// Funcion para leer datos del archivo CSV y construir el arbol
+// Verificar y ajustar el rey en el arbol
+void verifyKing(TreeNode *root)
+{
+    bool kingFound = false;
+    if (!root)
+        return;
+
+    if (root->is_king)
+    {
+        if (kingFound)
+        {
+            root->is_king = false;
+        }
+        else
+        {
+            kingFound = true;
+        }
+    }
+
+    verifyKing(root->left);
+    verifyKing(root->right);
+}
+
+// Asignar automaticamente un rey al miembro mas joven
+void assignYoungestKing(TreeNode *root)
+{
+    if (!root)
+        return;
+    bool kingFound = false;
+    TreeNode *youngest = nullptr;
+
+    // Buscar al miembro más joven
+    if (!root->is_dead && (!youngest || root->age < youngest->age))
+    {
+        youngest = root;
+    }
+
+    // Si no hay rey, asignar el mas joven
+    if (!kingFound && youngest)
+    {
+        youngest->is_king = true;
+        kingFound = true; // Asegurarse de que solo haya un rey
+    }
+
+    assignYoungestKing(root->left);
+    assignYoungestKing(root->right);
+}
+
+// Asignar automaticamente un rey a la persona más joven
+TreeNode *assignNewKing(TreeNode *root)
+{
+    if (!root)
+        return nullptr;
+
+    // Si el nodo actual es un candidato para rey, y no esta muerto
+    if (!root->is_dead)
+    {
+        return root;
+    }
+
+    // Recorrer el árbol para encontrar al siguiente rey valido
+    TreeNode *leftKing = assignNewKing(root->left);
+    if (leftKing && !leftKing->is_dead)
+        return leftKing;
+
+    TreeNode *rightKing = assignNewKing(root->right);
+    if (rightKing && !rightKing->is_dead)
+        return rightKing;
+
+    return nullptr; // Si no se encuentra un nuevo rey
+}
+
+bool isKingExists(TreeNode* root) {
+    if (root == nullptr) return false;
+
+    if (root->is_king) {
+        return true;
+    }
+
+    // Recorrer de manera recursiva en los hijos izquierdo y derecho
+    return isKingExists(root->left) || isKingExists(root->right);
+}
+
+// Cargar datos desde el archivo CSV y construir el arbol
 TreeNode *loadFromCSV(const string &filename)
 {
     ifstream file(filename);
@@ -77,6 +161,7 @@ TreeNode *loadFromCSV(const string &filename)
 
     TreeNode *root = nullptr;
     int successCount = 0, failureCount = 0;
+    bool kingFound = false; // Bandera para verificar si ya hemos encontrado un rey
 
     while (getline(file, line))
     {
@@ -118,6 +203,20 @@ TreeNode *loadFromCSV(const string &filename)
             getline(ss, token, ',');
             is_king = (token == "true" || token == "1");
 
+            // Si ya hemos encontrado un rey, no cargamos nodos con is_king == true
+            if (is_king && kingFound)
+            {
+                cout << "Ya se ha encontrado un rey. Este nodo sera ignorado.\n";
+                continue;
+            }
+
+            // Si encontramos un rey, marcamos la bandera kingFound
+            if (is_king)
+            {
+                kingFound = true;
+            }
+
+            // Crear el nuevo nodo
             TreeNode *newNode = new TreeNode(id, name, last_name, gender, age, id_father, is_dead, was_king, is_king);
             if (!root)
             {
@@ -140,59 +239,22 @@ TreeNode *loadFromCSV(const string &filename)
     cout << "Archivo procesado completamente.\n";
     cout << "Filas exitosas: " << successCount << ", Filas fallidas: " << failureCount << endl;
 
+    // Verificar que haya solo un rey
+    verifyKing(root);
+
+    // Asignar automaticamente un rey si no hay ninguno
+    assignYoungestKing(root);
+
     return root;
 }
 
-// Funcion para mostrar la linea de sucesion actual
-void displaySuccessionLine(TreeNode *root)
-{
-    if (!root || root->is_dead)
-        return;
 
-    if (!root->is_dead)
-        cout << root->name << " " << root->last_name << " (ID: " << root->id << ")\n";
-
-    displaySuccessionLine(root->left);
-    displaySuccessionLine(root->right);
-}
-
-// Funcion para asignar automaticamente el nuevo rey
-TreeNode *assignNewKing(TreeNode *root)
-{
-    if (!root || root->is_dead)
-        return nullptr;
-
-    if (root->is_king && root->is_dead)
-    {
-        if (root->left && !root->left->is_dead)
-        {
-            root->left->is_king = true;
-            return root->left;
-        }
-        else if (root->right && !root->right->is_dead)
-        {
-            root->right->is_king = true;
-            return root->right;
-        }
-    }
-
-    TreeNode *leftKing = assignNewKing(root->left);
-    if (leftKing)
-        return leftKing;
-
-    TreeNode *rightKing = assignNewKing(root->right);
-    if (rightKing)
-        return rightKing;
-
-    return nullptr;
-}
-
-// Funcion para modificar los datos de un nodo
+// Modificar los datos de un nodo (prohibido modificar id o id_father)
 void modifyNode(TreeNode *root)
 {
     if (!root)
     {
-        cout << "El arbol está vacío.\n";
+        cout << "El arbol esta vacio.\n";
         return;
     }
 
@@ -213,7 +275,7 @@ void modifyNode(TreeNode *root)
     cout << "Apellido: " << node->last_name << "\n";
     cout << "Genero: " << node->gender << "\n";
     cout << "Edad: " << node->age << "\n";
-    cout << "Está muerto: " << (node->is_dead ? "Si" : "No") << "\n";
+    cout << "Esta muerto: " << (node->is_dead ? "Si" : "No") << "\n";
     cout << "Fue rey: " << (node->was_king ? "Si" : "No") << "\n";
     cout << "Es rey: " << (node->is_king ? "Si" : "No") << "\n";
 
@@ -236,64 +298,85 @@ void modifyNode(TreeNode *root)
     string newGender;
     getline(cin, newGender);
     if (!newGender.empty() && (newGender == "M" || newGender == "F"))
-    {
         node->gender = newGender[0];
-    }
 
     cout << "Nueva edad: ";
-    string newAge;
-    getline(cin, newAge);
-    if (!newAge.empty())
+    string newAgeStr;
+    getline(cin, newAgeStr);
+    if (!newAgeStr.empty())
     {
-        node->age = stoi(newAge);
+        int newAge = stoi(newAgeStr);
+        if (newAge >= 0)
+            node->age = newAge;
     }
 
-    cout << "Esta muerto? (1 para Si, 0 para No): ";
-    string newIsDead;
-    getline(cin, newIsDead);
-    if (!newIsDead.empty())
+    cout << "Esta muerto? (0 para No, 1 para Si): ";
+    bool isDead;
+    cin >> isDead;
+    cin.ignore();
+    node->is_dead = isDead;
+
+    if (isDead)
     {
-        node->is_dead = (newIsDead == "1");
+        // Si el nodo se marca como muerto
+        if (node->is_king)
+        {
+            node->was_king = true;
+            node->is_king = false;
+            cout << "El nodo estaba marcado como rey. Se ha actualizado como 'Fue rey'.\n";
+        }
+
+        cout << "Nodo marcado como muerto.\n";
+
+        // Verificar si se necesita asignar un nuevo rey
+        TreeNode *newKing = assignNewKing(root);
+        if (newKing)
+        {
+            cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+        }
+    }
+    else
+    {
+        // Si el nodo esta vivo, permite modificar el estado de 'is_king' y 'was_king'
+        cout << "El nodo esta vivo.\n";
+        cout << "Fue rey? (0 para No, 1 para Si): ";
+        bool wasKing;
+        cin >> wasKing;
+        node->was_king = wasKing;
+
+        if (wasKing)
+        {
+            // Verificar si ya existe un rey en el arbol
+            if (isKingExists(root))
+            {
+                // Si ya hay un rey, cancelar la selección y mostrar el mensaje
+                node->is_king = false;
+                cout << "Ya existe un rey, no pueden haber dos.\n";
+            }
+            else
+            {
+                // Si no hay rey, permitir elegir si el nodo es rey
+                cout << "Es rey actualmente? (0 para No, 1 para Si): ";
+                bool isKing;
+                cin >> isKing;
+                node->is_king = isKing;
+            }
+        }
+        else
+        {
+            // Si no fue rey, se deja el valor de 'is_king' como falso
+            node->is_king = false;
+        }
     }
 
-    cout << "Fue rey? (1 para Si, 0 para No): ";
-    string newWasKing;
-    getline(cin, newWasKing);
-    if (!newWasKing.empty())
-    {
-        node->was_king = (newWasKing == "1");
-    }
-
-    cout << "Es rey? (1 para Si, 0 para No): ";
-    string newIsKing;
-    getline(cin, newIsKing);
-    if (!newIsKing.empty())
-    {
-        node->is_king = (newIsKing == "1");
-    }
-
-    cout << "Datos actualizados correctamente.\n";
+    cout << "Nodo actualizado correctamente.\n";
 }
 
-void showLineOfSuccession(TreeNode *root)
-{
-    if (!root)
-        return;
-
-    if (!root->is_dead)
-    { // Solo mostrar los vivos
-        cout << "ID: " << root->id << ", Name: " << root->name << ", Age: " << root->age << endl;
-    }
-    if (root->left)
-        showLineOfSuccession(root->left);
-    if (root->right)
-        showLineOfSuccession(root->right);
-}
 
 TreeNode *findNode(TreeNode *root, int id)
 {
     if (!root)
-        return nullptr; // Si el arbol esta vacio, regresa nullptr
+        return nullptr;
 
     if (root->id == id)
     {
@@ -307,6 +390,33 @@ TreeNode *findNode(TreeNode *root, int id)
     {
         return findNode(root->right, id);
     }
+}
+
+// Mostrar la linea de sucesion con los detalles completos de cada miembro
+void showLineOfSuccession(TreeNode *root)
+{
+    if (!root)
+        return;
+
+    // Mostrar solo a los miembros vivos
+    if (!root->is_dead)
+    {
+        // Mostrar detalles completos del nodo
+        cout << "ID: " << root->id
+             << ", Name: " << root->name
+             << ", Last Name: " << root->last_name
+             << ", Gender: " << (root->gender == 'M' ? "M" : "F")
+             << ", Age: " << root->age
+             << ", ID Father: " << root->id_father
+             << ", Is Dead: " << (root->is_dead ? "Yes" : "No")
+             << ", Was King: " << (root->was_king ? "Yes" : "No")
+             << ", Is King: " << (root->is_king ? "Yes" : "No") << endl;
+    }
+
+    // Recorrer al primogenito
+    showLineOfSuccession(root->left);
+    // Recorrer al segundo hijo
+    showLineOfSuccession(root->right);
 }
 
 void showMenu()
@@ -358,7 +468,7 @@ int main()
             }
             else
             {
-                cout << "El árbol está vacío.\n";
+                cout << "El arbol esta vacio.\n";
             }
             break;
         case 4:
