@@ -140,7 +140,7 @@ void verifyKing(TreeNode *root)
     {
         if (kingFound)
         {
-            root->is_king = false; // Si ya se encontró un rey, se marca este como no rey
+            root->is_king = false; // Si ya se encontro un rey, se marca este como no rey
         }
         else
         {
@@ -148,26 +148,28 @@ void verifyKing(TreeNode *root)
         }
     }
 
+    // Recursion sobre los hijos izquierdo y derecho
     verifyKing(root->left);
     verifyKing(root->right);
 }
+
 
 TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
 {
     if (!root || !currentKing)
         return nullptr;
 
-    // Si el rey actual tiene menos de 70 años, no hacemos nada
+    // Si el rey actual tiene menos de 70 años y no esta muerto, no hacemos nada
     if (currentKing->age < 70 && !currentKing->is_dead)
     {
-        cout << "El rey actual está vivo y tiene menos de 70 años.\n";
+        cout << "El rey actual esta vivo y tiene menos de 70 anios.\n";
         return currentKing;
     }
 
-    // Si el rey está muerto, buscar a un sucesor
-    cout << "El rey actual está muerto o tiene más de 70 años, buscando nuevo rey...\n";
+    // Si el rey esta muerto, buscar a un sucesor
+    cout << "El rey actual esta muerto o tiene más de 70 anios, buscando nuevo rey...\n";
 
-    // 1. Buscar al primogénito vivo del árbol del rey
+    // 1. Buscar al primogénito vivo del arbol del rey
     if (currentKing->left)
     {
         TreeNode *newKing = findFirstAlivePrimogenito(currentKing->left);
@@ -179,7 +181,7 @@ TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
         }
     }
 
-    // 2. Si no tiene hijos, buscar al primogénito vivo del hermano
+    // 2. Si no tiene hijos, buscar al primogenito vivo del hermano
     TreeNode *siblingKing = findFirstAliveSibling(currentKing);
     if (siblingKing)
     {
@@ -192,7 +194,7 @@ TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
         }
     }
 
-    // 3. Si no tiene hijos ni hermanos, buscar al primogénito vivo del árbol del tío
+    // 3. Si no tiene hijos ni hermanos, buscar al primogenito vivo del arbol del tio
     if (currentKing->parent && currentKing->parent->parent)
     {
         TreeNode *uncleKing = (currentKing->parent == currentKing->parent->parent->left)
@@ -211,7 +213,7 @@ TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
         }
     }
 
-    // 4. Si no se encuentra un rey, buscar el primer ancestro con dos hijos
+    // 4. Si no se encuentra un rey, buscar el primer ancestro con dos hijos vivos
     TreeNode *ancestorKing = findAncestorWithTwoChildren(root);
     if (ancestorKing)
     {
@@ -224,7 +226,7 @@ TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
         }
     }
 
-    // 5. Si todos los primogénitos están muertos, buscar los segundos hijos
+    // 5. Si todos los primogenitos están muertos, buscar los segundos hijos
     TreeNode *newKing = findFirstAliveSecondChild(currentKing->left);
     if (newKing)
     {
@@ -380,7 +382,7 @@ void modifyNode(TreeNode *root)
 {
     if (!root)
     {
-        cout << "El arbol esta vacio.\n";
+        cout << "El arbol está vacio.\n";
         return;
     }
 
@@ -391,19 +393,18 @@ void modifyNode(TreeNode *root)
     TreeNode *node = findNode(root, id);
     if (!node)
     {
-        cout << "No se encontro un nodo con el ID especificado.\n";
+        cout << "No se encontró un nodo con el ID especificado.\n";
         return;
     }
 
     // Buscar al rey actual
-    TreeNode *currentKing = findKing(root); // Aquí encontramos al rey actual
+    TreeNode *currentKing = findKing(root); // Aqui encontramos al rey actual
     if (!currentKing)
     {
         cout << "No se encontró un rey actual.\n";
         return;
     }
 
-    // El resto de tu código para modificar el nodo sigue igual
     cout << "Datos actuales del nodo:\n";
     cout << "ID: " << node->id << "\n";
     cout << "Nombre: " << node->name << "\n";
@@ -472,7 +473,7 @@ void modifyNode(TreeNode *root)
     }
     else
     {
-        // Si el nodo esta vivo, permite modificar el estado de 'is_king' y 'was_king'
+        // Si el nodo está vivo, permite modificar el estado de 'is_king' y 'was_king'
         cout << "El nodo esta vivo.\n";
         cout << "Fue rey? (0 para No, 1 para Si): ";
         bool wasKing;
@@ -481,7 +482,7 @@ void modifyNode(TreeNode *root)
 
         if (wasKing)
         {
-            // Verificar si ya existe un rey en el arbol
+            // Verificar si ya existe un rey en el árbol
             if (isKingExists(root))
             {
                 // Si ya hay un rey, cancelar la selección y mostrar el mensaje
@@ -492,20 +493,14 @@ void modifyNode(TreeNode *root)
             {
                 // Si no hay rey, permitir elegir si el nodo es rey
                 cout << "Es rey actualmente? (0 para No, 1 para Si): ";
-                bool isKing;
+                int isKing;
                 cin >> isKing;
-                node->is_king = isKing;
+                node->is_king = (isKing == 1);
             }
         }
-        else
-        {
-            // Si no fue rey, se deja el valor de 'is_king' como falso
-            node->is_king = false;
-        }
     }
-
-    cout << "Nodo actualizado correctamente.\n";
 }
+
 
 // Mostrar la linea de sucesion con los detalles completos de cada miembro
 void showLineOfSuccession(TreeNode *root)
