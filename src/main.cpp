@@ -18,17 +18,87 @@ struct TreeNode
     bool is_dead;
     bool was_king;
     bool is_king;
-    TreeNode *left;  // Primogenito
-    TreeNode *right; // Segundo hijo
+    TreeNode *left;   // Primogenito
+    TreeNode *right;  // Segundo hijo
+    TreeNode *parent; // Padre del nodo
 
     TreeNode(int id, const string &name, const string &last_name, char gender, int age, int id_father, bool is_dead, bool was_king, bool is_king)
-        : id(id), name(name), last_name(last_name), gender(gender), age(age), id_father(id_father), is_dead(is_dead), was_king(was_king), is_king(is_king), left(nullptr), right(nullptr) {}
+        : id(id), name(name), last_name(last_name), gender(gender), age(age), id_father(id_father), is_dead(is_dead), was_king(was_king), is_king(is_king), left(nullptr), right(nullptr), parent(nullptr) {}
 };
 
 // Buscar nodo por ID
-TreeNode *findNode(TreeNode *root, int id);
+TreeNode *findNode(TreeNode *root, int id)
+{
+    if (!root)
+        return nullptr;
 
-// Imprimir el árbol
+    if (root->id == id)
+        return root;
+    else if (id < root->id)
+        return findNode(root->left, id);
+    else
+        return findNode(root->right, id);
+}
+
+TreeNode *findFirstAlivePrimogenito(TreeNode *root)
+{
+    if (!root)
+        return nullptr;
+
+    // Primero, buscar en el hijo izquierdo (primogénito)
+    if (!root->is_dead)
+    {
+        return root;
+    }
+
+    // Si el primogénito está muerto, buscar recursivamente en sus hijos
+    TreeNode *left = findFirstAlivePrimogenito(root->left);
+    if (left)
+        return left;
+
+    // Si no se encuentra, buscar en el hijo derecho
+    return findFirstAlivePrimogenito(root->right);
+}
+
+TreeNode *findFirstAliveSecondChild(TreeNode *root)
+{
+    if (!root)
+        return nullptr;
+
+    // Buscar en el segundo hijo
+    if (!root->is_dead)
+    {
+        return root;
+    }
+
+    // Buscar en los descendientes del hijo derecho
+    return findFirstAliveSecondChild(root->right);
+}
+
+TreeNode *findFirstAliveSibling(TreeNode *root)
+{
+    if (!root || !root->parent)
+        return nullptr;
+
+    // Buscar al hermano en el árbol del padre
+    TreeNode *sibling = (root == root->parent->left) ? root->parent->right : root->parent->left;
+    return findFirstAlivePrimogenito(sibling);
+}
+
+TreeNode* findAncestorWithTwoChildren(TreeNode* root) {
+    if (!root) return nullptr;
+
+    // Si el ancestro tiene dos hijos vivos, devuelve el ancestro
+    if (root->left && root->right && !root->left->is_dead && !root->right->is_dead) {
+        return root;
+    }
+
+    // Recursivamente buscar en los padres
+    return findAncestorWithTwoChildren(root->parent);
+}
+
+
+// Imprimir el arbol
 void printTree(TreeNode *root)
 {
     if (!root)
@@ -70,11 +140,11 @@ void verifyKing(TreeNode *root)
     {
         if (kingFound)
         {
-            root->is_king = false;
+            root->is_king = false; // Si ya se encontró un rey, se marca este como no rey
         }
         else
         {
-            kingFound = true;
+            kingFound = true; // Solo asignar el primer rey encontrado
         }
     }
 
@@ -82,64 +152,125 @@ void verifyKing(TreeNode *root)
     verifyKing(root->right);
 }
 
-// Asignar automaticamente un rey al miembro mas joven
-void assignYoungestKing(TreeNode *root)
+TreeNode *assignNewKing(TreeNode *root, TreeNode *currentKing)
 {
-    if (!root)
-        return;
-    bool kingFound = false;
-    TreeNode *youngest = nullptr;
-
-    // Buscar al miembro más joven
-    if (!root->is_dead && (!youngest || root->age < youngest->age))
-    {
-        youngest = root;
-    }
-
-    // Si no hay rey, asignar el mas joven
-    if (!kingFound && youngest)
-    {
-        youngest->is_king = true;
-        kingFound = true; // Asegurarse de que solo haya un rey
-    }
-
-    assignYoungestKing(root->left);
-    assignYoungestKing(root->right);
-}
-
-// Asignar automaticamente un rey a la persona más joven
-TreeNode *assignNewKing(TreeNode *root)
-{
-    if (!root)
+    if (!root || !currentKing)
         return nullptr;
 
-    // Si el nodo actual es un candidato para rey, y no esta muerto
-    if (!root->is_dead)
+    // Si el rey actual tiene menos de 70 años, no hacemos nada
+    if (currentKing->age < 70 && !currentKing->is_dead)
     {
-        return root;
+        cout << "El rey actual está vivo y tiene menos de 70 años.\n";
+        return currentKing;
     }
 
-    // Recorrer el árbol para encontrar al siguiente rey valido
-    TreeNode *leftKing = assignNewKing(root->left);
-    if (leftKing && !leftKing->is_dead)
-        return leftKing;
+    // Si el rey está muerto, buscar a un sucesor
+    cout << "El rey actual está muerto o tiene más de 70 años, buscando nuevo rey...\n";
 
-    TreeNode *rightKing = assignNewKing(root->right);
-    if (rightKing && !rightKing->is_dead)
-        return rightKing;
+    // 1. Buscar al primogénito vivo del árbol del rey
+    if (currentKing->left)
+    {
+        TreeNode *newKing = findFirstAlivePrimogenito(currentKing->left);
+        if (newKing)
+        {
+            newKing->is_king = true;
+            cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+            return newKing;
+        }
+    }
 
-    return nullptr; // Si no se encuentra un nuevo rey
+    // 2. Si no tiene hijos, buscar al primogénito vivo del hermano
+    TreeNode *siblingKing = findFirstAliveSibling(currentKing);
+    if (siblingKing)
+    {
+        TreeNode *newKing = findFirstAlivePrimogenito(siblingKing);
+        if (newKing)
+        {
+            newKing->is_king = true;
+            cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+            return newKing;
+        }
+    }
+
+    // 3. Si no tiene hijos ni hermanos, buscar al primogénito vivo del árbol del tío
+    if (currentKing->parent && currentKing->parent->parent)
+    {
+        TreeNode *uncleKing = (currentKing->parent == currentKing->parent->parent->left)
+                                  ? currentKing->parent->parent->right
+                                  : currentKing->parent->parent->left;
+
+        if (uncleKing)
+        {
+            TreeNode *newKing = findFirstAlivePrimogenito(uncleKing);
+            if (newKing)
+            {
+                newKing->is_king = true;
+                cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+                return newKing;
+            }
+        }
+    }
+
+    // 4. Si no se encuentra un rey, buscar el primer ancestro con dos hijos
+    TreeNode *ancestorKing = findAncestorWithTwoChildren(root);
+    if (ancestorKing)
+    {
+        TreeNode *newKing = findFirstAlivePrimogenito(ancestorKing);
+        if (newKing)
+        {
+            newKing->is_king = true;
+            cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+            return newKing;
+        }
+    }
+
+    // 5. Si todos los primogénitos están muertos, buscar los segundos hijos
+    TreeNode *newKing = findFirstAliveSecondChild(currentKing->left);
+    if (newKing)
+    {
+        newKing->is_king = true;
+        cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+        return newKing;
+    }
+
+    newKing = findFirstAliveSecondChild(currentKing->right);
+    if (newKing)
+    {
+        newKing->is_king = true;
+        cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
+        return newKing;
+    }
+
+    // Si no se pudo encontrar un rey, retornar nullptr
+    cout << "No se pudo encontrar un nuevo rey.\n";
+    return nullptr;
 }
 
-bool isKingExists(TreeNode* root) {
-    if (root == nullptr) return false;
+bool isKingExists(TreeNode *root)
+{
+    if (root == nullptr)
+        return false;
 
-    if (root->is_king) {
+    if (root->is_king)
+    {
         return true;
     }
 
     // Recorrer de manera recursiva en los hijos izquierdo y derecho
     return isKingExists(root->left) || isKingExists(root->right);
+}
+
+// Buscar el rey actual
+TreeNode *findKing(TreeNode *root)
+{
+    if (!root)
+        return nullptr;
+    if (root->is_king)
+        return root; // Si este nodo es el rey, devolverlo
+    TreeNode *leftResult = findKing(root->left);
+    if (leftResult)
+        return leftResult;        // Buscar recursivamente en el hijo izquierdo
+    return findKing(root->right); // Buscar recursivamente en el hijo derecho
 }
 
 // Cargar datos desde el archivo CSV y construir el arbol
@@ -161,7 +292,7 @@ TreeNode *loadFromCSV(const string &filename)
 
     TreeNode *root = nullptr;
     int successCount = 0, failureCount = 0;
-    bool kingFound = false; // Bandera para verificar si ya hemos encontrado un rey
+    bool kingFound = false; // Bandera para verificar si ya hemos encontrado un rey valido
 
     while (getline(file, line))
     {
@@ -203,17 +334,15 @@ TreeNode *loadFromCSV(const string &filename)
             getline(ss, token, ',');
             is_king = (token == "true" || token == "1");
 
-            // Si ya hemos encontrado un rey, no cargamos nodos con is_king == true
-            if (is_king && kingFound)
+            // Si encontramos un rey con edad <= 70 y aun no hemos asignado uno
+            if (!kingFound && is_king && age <= 70)
             {
-                cout << "Ya se ha encontrado un rey. Este nodo sera ignorado.\n";
-                continue;
+                cout << "Rey encontrado con edad <= 70 años: " << name << " " << last_name << endl;
+                kingFound = true; // Marcar que hemos encontrado un rey valido
             }
-
-            // Si encontramos un rey, marcamos la bandera kingFound
-            if (is_king)
+            else
             {
-                kingFound = true;
+                is_king = false; // Marcar a los demas como no rey
             }
 
             // Crear el nuevo nodo
@@ -226,6 +355,7 @@ TreeNode *loadFromCSV(const string &filename)
             {
                 root = insertNode(root, newNode);
             }
+
             successCount++;
         }
         catch (const exception &e)
@@ -242,12 +372,8 @@ TreeNode *loadFromCSV(const string &filename)
     // Verificar que haya solo un rey
     verifyKing(root);
 
-    // Asignar automaticamente un rey si no hay ninguno
-    assignYoungestKing(root);
-
     return root;
 }
-
 
 // Modificar los datos de un nodo (prohibido modificar id o id_father)
 void modifyNode(TreeNode *root)
@@ -269,6 +395,15 @@ void modifyNode(TreeNode *root)
         return;
     }
 
+    // Buscar al rey actual
+    TreeNode *currentKing = findKing(root); // Aquí encontramos al rey actual
+    if (!currentKing)
+    {
+        cout << "No se encontró un rey actual.\n";
+        return;
+    }
+
+    // El resto de tu código para modificar el nodo sigue igual
     cout << "Datos actuales del nodo:\n";
     cout << "ID: " << node->id << "\n";
     cout << "Nombre: " << node->name << "\n";
@@ -328,8 +463,8 @@ void modifyNode(TreeNode *root)
 
         cout << "Nodo marcado como muerto.\n";
 
-        // Verificar si se necesita asignar un nuevo rey
-        TreeNode *newKing = assignNewKing(root);
+        // Aquí asignamos un nuevo rey
+        TreeNode *newKing = assignNewKing(root, currentKing); // Pasa el rey actual para reasignar el trono
         if (newKing)
         {
             cout << "Nuevo rey asignado: " << newKing->name << " " << newKing->last_name << endl;
@@ -370,26 +505,6 @@ void modifyNode(TreeNode *root)
     }
 
     cout << "Nodo actualizado correctamente.\n";
-}
-
-
-TreeNode *findNode(TreeNode *root, int id)
-{
-    if (!root)
-        return nullptr;
-
-    if (root->id == id)
-    {
-        return root;
-    }
-    else if (id < root->id)
-    {
-        return findNode(root->left, id);
-    }
-    else
-    {
-        return findNode(root->right, id);
-    }
 }
 
 // Mostrar la linea de sucesion con los detalles completos de cada miembro
